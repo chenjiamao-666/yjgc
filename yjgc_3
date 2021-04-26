@@ -1,0 +1,111 @@
+#include <iostream>
+#include <stdio.h>
+#include <bits/stdc++.h>
+#include <windows.h>
+#include <stdlib.h>
+#include <math.h>
+#define MAX 100
+#define R 6378140.0
+using namespace std;
+class plane
+{
+public:
+    double x,y,z;
+    int num;
+};
+typedef enum
+{
+	DG,DN,UDG,UDN
+}GraphKind;
+
+typedef struct ArcCell    //边的定义
+{
+	double adj;              //权值
+}ArcCell,AdjMatrix[MAX][MAX];
+
+typedef struct            //图的定义
+{
+	char vexs[MAX][MAX];        //顶点信息
+	AdjMatrix arcs;       //边的信息
+	int vexnum;           //顶点数
+	int arcnum;           //边数
+	GraphKind kind;       //图的种类标志
+}Graph;
+
+bool fg_fri[1000]={0};
+bool fg_anti[1000]={0};
+bool cmp(pair<plane,plane> a,pair<plane,plane> b) //计算距离
+{
+    double p1=(a.first.z-a.second.z)*(a.first.z-a.second.z);
+    double p2=(b.first.z-b.second.z)*(b.first.z-b.second.z);
+    double q1=sin(a.first.y)*sin(a.second.y);
+    double q2=sin(b.first.y)*sin(b.second.y);
+    double r1=R*acos(cos(a.first.y)*cos(a.second.y)*cos(a.first.x-a.second.x));
+    double r2=R*acos(cos(b.first.y)*cos(b.second.y)*cos(b.first.x-b.second.x));
+    double ax=p1+(q1+r1)*(q1+r1);
+    double bx=p2+(q2+r2)*(q2+r2);
+    return ax<bx;
+}
+bool cmp2(pair<plane,plane> a,pair<plane,plane> b)
+{
+    return a.first.num<b.first.num;
+}
+int main()
+{
+    int n;
+    cout<<"输入敌机数量：";
+    cin>>n;
+    cout<<"需要派遣的友机架数："<<n<<"\n";
+    cout<<"东经为正，西经为负，北纬为正，南纬为负 \n";
+    system("pause");
+    vector<plane> fri,anti;//建立敌机和友机的动态数组
+    for(int i=0;i<n;++i)//输入友机信息
+    {
+        cout<<"输入第"<<i+1<<"台友机位置信息（经度，纬度，高度）:";
+        double x,y,z;
+        cin>>x>>y>>z;
+        while(x>180||x<-180||y>90||y<-90||z<0)
+        {
+            printf("输入有误，请重新输入！\n");
+            cin>>x>>y>>z;
+        }
+        fri.push_back({x,y,z,i+1});
+    }
+    for(int i=0;i<n;++i)//输入敌机信息
+    {
+        cout<<"输入第"<<i+1<<"台敌机位置信息（经度，纬度，高度）:";
+        double x,y,z;
+        cin>>x>>y>>z;
+        while(x>180||x<-180||y>90||y<-90||z<0)
+        {
+            printf("输入有误，请重新输入！\n");
+            cin>>x>>y>>z;
+        }
+        anti.push_back({x,y,z,i+1});
+    }
+    vector<pair<plane,plane> > par,par2;
+    for(int i=0;i<n;++i)
+    {
+        for (int ii = 0; ii < n; ++ii)
+        {
+            par.push_back(make_pair(fri[i], anti[ii]));
+        }
+    }
+    sort(par.begin(),par.end(),cmp);
+    int i=0,ii=0;
+    for(;ii<n*n;++ii)
+    {
+        if(!fg_fri[par[ii].first.num]&&!fg_anti[par[ii].second.num])
+        {
+            fg_fri[par[ii].first.num]=1;
+            fg_anti[par[ii].second.num]=1;
+            par2.push_back(par[ii]);
+            ++i;
+        }
+    }
+    sort(par2.begin(),par2.end(),cmp2);
+    for(i=0;i<n;++i)
+    {
+        cout<<"友机"<<par2[i].first.num<<" ------> 敌机"<<par2[i].second.num<<endl;
+    }
+}
